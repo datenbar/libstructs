@@ -55,3 +55,6 @@ dkms.conf
 # debug information files
 *.dwo
 
+generated/
+test_*
+!tests/*.c
