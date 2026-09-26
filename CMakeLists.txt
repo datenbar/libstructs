@@ -100,11 +100,21 @@ endforeach()
 # call malloc/realloc/free directly, since it exists to provide the
 # libc-backed Allocator for hosted builds. Only generated/*.c (the actual
 # structure code) is checked here.
+#
+# -DLIBSTRUCTS_KERNEL_BUILD switches LS_ASSERT (src/panic.h) from a real
+# assert() to a call to kernel_panic(). Without this flag, any structure
+# using LS_ASSERT would fail this check for the wrong reason: assert()
+# itself is a libc call, so it would report a "libc leak" that isn't
+# actually one. tools/freestanding_stub.c provides a throwaway
+# kernel_panic() just so the link can complete, a real kernel provides
+# its own.
 if(LIBSTRUCTS_SOURCES)
   add_custom_target(freestanding-check
         COMMAND bash -c "for f in ${CMAKE_SOURCE_DIR}/generated/*.c; do \
             echo \"checking $$f\"; \
-            ${CMAKE_C_COMPILER} -ffreestanding -nostdlib -nostartfiles \"$$f\" \
+            ${CMAKE_C_COMPILER} -ffreestanding -nostdlib -nostartfiles \
+                -DLIBSTRUCTS_KERNEL_BUILD \"$$f\" \
+                ${CMAKE_SOURCE_DIR}/tools/freestanding_stub.c \
                 -I${CMAKE_SOURCE_DIR}/generated -I${CMAKE_SOURCE_DIR}/src \
                 -o /dev/null || exit 1; \
         done"

@@ -4,11 +4,24 @@ type listed in types.txt, and writes real .c/.h files into generated/.
 
 Run this any time a template changes or a new type is added:
     python gen.py
+
+Dependency resolution
+----------------------
+DEPENDENCIES below records that graph once. Requesting a struct in STRUCTS
+automatically pulls in everything it depends on, transitively, before
+generating anything, so the generated .c file's #include "vector_int.h"
+always has something real to point at.
 """
 
 from pathlib import Path
 
-STRUCTS = []
+# Which structures to generate. Add a name here once its .tmpl files exist
+# in templates/ , dependencies are handled automatically.
+STRUCTS = ["vector"]
+
+DEPENDENCIES = {
+    "vector": [],
+}
 
 TEMPLATE_DIR = Path("templates")
 OUT_DIR = Path("generated")
@@ -23,15 +36,43 @@ def load_types():
     ]
 
 
+def resolve_dependencies(requested):
+    """Expand a list of requested struct names into itself plus every
+    dependency, transitively, with duplicates removed. Order doesn't matter
+    for compilation since #include handles ordering, this just needs to
+    make sure nothing required is left out."""
+    resolved = set()
+
+    def visit(name):
+        if name in resolved:
+            return
+        if name not in DEPENDENCIES:
+            print(
+                f"warning: '{name}' has no entry in DEPENDENCIES, "
+                f"assuming it depends on nothing"
+            )
+            resolved.add(name)
+            return
+        resolved.add(name)
+        for dep in DEPENDENCIES[name]:
+            visit(dep)
+
+    for name in requested:
+        visit(name)
+
+    return resolved
+
+
 def generate():
     types = load_types()
     OUT_DIR.mkdir(exist_ok=True)
 
-    if not STRUCTS:
-        print("no structs listed in gen.py yet, nothing to generate")
-        return
+    all_structs = resolve_dependencies(STRUCTS)
+    added = all_structs - set(STRUCTS)
+    if added:
+        print(f"auto-generating dependencies too: {sorted(added)}")
 
-    for struct in STRUCTS:
+    for struct in sorted(all_structs):
         for ext in ("h", "c"):
             tmpl_path = TEMPLATE_DIR / f"{struct}.{ext}.tmpl"
             if not tmpl_path.exists():
