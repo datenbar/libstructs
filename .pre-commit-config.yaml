@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format (auto-fixes in place)
+        entry: clang-format -i -style=file
+        language: system
+        files: ^(src|tools|tests)/.*\.(c|h)$
+
+      - id: cppcheck
+        name: cppcheck static analysis
+        entry: cppcheck --enable=warning,style --error-exitcode=1 --inline-suppr
+        language: system
+        files: ^(src|tools|tests)/.*\.(c|h)$
+
+      - id: trailing-whitespace
+        name: no trailing whitespace
+        entry: bash -c 'fail=0; for f in "$@"; do grep -nI " $" "$f" && fail=1; done; exit $fail' --
+        language: system
+        files: \.(c|h|md|py|yml|txt)$
+
+      - id: end-of-file-newline
+        name: file ends with a newline
+        entry: >-
+          bash -c 'for f in "$@"; do
+          [ -s "$f" ] && [ -z "$(tail -c1 "$f")" ] || { echo "missing trailing newline: $f"; exit 1; }; done' --
+        language: system
+        files: \.(c|h|md|py|yml|txt)$

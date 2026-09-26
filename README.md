@@ -1,7 +1,13 @@
 # libstructs
 
-A collection of typed data structures for C, generated from templates rather
+> A collection of typed data structures for C, generated from templates rather
 than written by hand for every type.
+
+![Build](https://codeberg.org/datenbar/libstructs/actions/workflows/build.yml/badge.svg)
+![Lint](https://codeberg.org/datenbar/libstructs/actions/workflows/lint.yml/badge.svg)
+![Version](https://img.shields.io/badge/version-0.1-orange)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Language](https://img.shields.io/badge/language-C-blue)
 
 ## Overview
 

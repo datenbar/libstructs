@@ -1,0 +1,33 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: lint-${{ forgejo.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: codeberg-small
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends clang-format cppcheck
+
+      - name: Check formatting
+        run: |
+          find src tools tests -name '*.c' -o -name '*.h' | \
+            xargs -r clang-format --dry-run --Werror -style=file
+
+      - name: Static analysis
+        run: |
+          cppcheck --enable=warning,style --error-exitcode=1 \
+            --inline-suppr src tools tests
